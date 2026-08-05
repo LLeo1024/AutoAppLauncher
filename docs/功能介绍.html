@@ -156,6 +156,48 @@
     margin-bottom: 12px;
   }
 
+  /* Download box */
+  .download-box {
+    background: #fff;
+    border: 2px solid #e0e7ff;
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.1);
+  }
+  .download-box .dl-title {
+    font-size: 18px; font-weight: 800;
+    margin-bottom: 6px;
+    color: #1a1a2e;
+  }
+  .download-box .dl-desc {
+    font-size: 14px; color: #888;
+    margin-bottom: 18px;
+  }
+  .download-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    text-decoration: none;
+    padding: 14px 36px;
+    border-radius: 12px;
+    font-size: 16px; font-weight: 700;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+  }
+  .download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+  }
+  .download-meta {
+    margin-top: 14px;
+    font-size: 13px; color: #aaa;
+  }
+  .download-meta a {
+    color: #6366f1; text-decoration: none; font-weight: 600;
+  }
+  .download-meta a:hover { text-decoration: underline; }
+
   @media (max-width: 500px) {
     .feature-grid, .usecase-grid { grid-template-columns: 1fr; }
   }
@@ -171,6 +213,21 @@
 </div>
 
 <div class="container">
+
+  <!-- 下载 APK -->
+  <div class="section" style="margin-top:32px;">
+    <div class="download-box">
+      <div class="dl-title">📲 直接下载 APK 安装</div>
+      <div class="dl-desc">无需编译，下载后直接安装到手机即可使用</div>
+      <a class="download-btn" href="https://github.com/Leo951024/AutoAppLauncher/raw/main/releases/AutoAppLauncher-v1.6.apk">
+        ⬇️ 下载 APK (2.2MB)
+      </a>
+      <div class="download-meta">
+        也可以前往 <a href="https://github.com/Leo951024/AutoAppLauncher/tree/main/releases" target="_blank">releases 目录</a> 手动下载<br>
+        源码仓库：<a href="https://github.com/Leo951024/AutoAppLauncher" target="_blank">github.com/Leo951024/AutoAppLauncher</a>
+      </div>
+    </div>
+  </div>
 
   <!-- 核心功能 -->
   <div class="section">
