@@ -4,6 +4,16 @@
 
 专为 MIUI 系统深度适配，解决小米手机后台杀进程、锁屏无法拉起等痛点。
 
+## 📲 下载安装
+
+> 无需自己编译，直接下载 APK 安装即可使用。
+
+**[⬇️ 下载 AutoAppLauncher v1.6 APK (2.2MB)](https://github.com/Leo951024/AutoAppLauncher/raw/main/releases/AutoAppLauncher-v1.6.apk)**
+
+也可以前往 [`releases` 目录](https://github.com/Leo951024/AutoAppLauncher/tree/main/releases) 手动下载。
+
+安装时可能需要开启「允许安装未知来源应用」，安装完成后请按照 App 内引导开启 MIUI 相关权限。
+
 ## 核心功能
 
 | 功能 | 说明 |
