@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoAppLauncher - 定时启动器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    line-height: 1.7;
+  }
+  .container { max-width: 720px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    color: #fff;
+    padding: 50px 30px 40px;
+    text-align: center;
+    border-radius: 0 0 24px 24px;
+  }
+  .hero-icon {
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 40px;
+  }
+  .hero h1 { font-size: 28px; font-weight: 800; letter-spacing: 0.5px; }
+  .hero .tagline { font-size: 16px; opacity: 0.9; margin-top: 8px; }
+  .hero .version {
+    display: inline-block; margin-top: 14px;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 600;
+  }
+
+  /* Section */
+  .section { margin-top: 36px; }
+  .section-title {
+    font-size: 20px; font-weight: 700;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .bar {
+    width: 4px; height: 22px;
+    background: linear-gradient(180deg, #6366f1, #a855f7);
+    border-radius: 2px;
+  }
+
+  /* Feature cards */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .feature-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(99,102,241,0.12);
+  }
+  .feature-card .emoji { font-size: 28px; margin-bottom: 10px; display: block; }
+  .feature-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .feature-card p { font-size: 13px; color: #555; line-height: 1.6; }
+
+  /* Repeat modes */
+  .mode-list {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .mode-item {
+    display: flex; align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .mode-item:last-child { border-bottom: none; }
+  .mode-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-right: 14px;
+    flex-shrink: 0;
+  }
+  .mode-info h4 { font-size: 15px; font-weight: 600; }
+  .mode-info p { font-size: 13px; color: #888; }
+
+  /* Highlights */
+  .highlight-box {
+    background: linear-gradient(135deg, #eef2ff, #faf5ff);
+    border: 1px solid #e0e7ff;
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .highlight-item {
+    display: flex; align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .highlight-item:last-child { margin-bottom: 0; }
+  .highlight-check {
+    width: 22px; height: 22px;
+    background: #6366f1;
+    border-radius: 50%;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    margin-right: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .highlight-item h4 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .highlight-item p { font-size: 13px; color: #555; }
+
+  /* Use cases */
+  .usecase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .usecase-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    border-left: 4px solid #8b5cf6;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .usecase-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: #6366f1; }
+  .usecase-card p { font-size: 13px; color: #666; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 24px;
+    color: #999;
+    font-size: 13px;
+  }
+  .footer .tech {
+    display: inline-block;
+    background: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 500px) {
+    .feature-grid, .usecase-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-icon">⏰</div>
+  <h1>AutoAppLauncher</h1>
+  <div class="tagline">定时启动器 — 到点自动打开你指定的 App</div>
+  <div class="version">v1.6 · Android 11+</div>
+</div>
+
+<div class="container">
+
+  <!-- 核心功能 -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span>核心功能</div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="emoji">🎯</span>
+        <h3>定时拉起 App</h3>
+        <p>设定时间到点后，自动打开你选择的目标应用，无需手动操作</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🎲</span>
+        <h3>随机时间段触发</h3>
+        <p>选取一个时间段，系统在该时间段内随机选择一个时间点触发</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">📱</span>
+        <h3>熄屏也能触发</h3>
+        <p>屏幕关闭/锁屏状态下依然可靠拉起目标 App，不漏触发</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">✏️</span>
+        <h3>任务查看与修改</h3>
+        <p>已创建的任务随时查看详情、修改时间/重复模式/目标应用</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔄</span>
+        <h3>开机自动启动</h3>
+        <p>手机重启后自动恢复所有定时任务，无需重新设置</p>
+      </div>
+      <div class="feature-card">
+        <span class="emoji">🔋</span>
+        <h3>后台常驻保活</h3>
+        <p>前台服务 + 常驻通知，最大程度防止被系统杀死</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 重复模式 -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span>6 种重复模式</div>
+    <div class="mode-list">
+      <div class="mode-item">
+        <div class="mode-icon" style="background:#eef2ff;">🕐</div>
+        <div class="mode-info">
+          <h4>仅一次</h4>
+          <p>触发一次后自动取消，适合临时提醒</p>
+        </div>
+      </div>
+      <div class="mode-item">
+        <div class="mode-icon" style="background:#fef3c7;">📅</div>
+        <div class="mode-info">
+          <h4>每天</h4>
+          <p>每天固定时间触发</p>
+        </div>
+      </div>
+      <div class="mode-item">
+        <div class="mode-icon" style="background:#dbeafe;">📆</div>
+        <div class="mode-info">
+          <h4>每周</h4>
+          <p>每周指定星期几触发</p>
+        </div>
+      </div>
+      <div class="mode-item">
+        <div class="mode-icon" style="background:#fce7f3;">🎉</div>
+        <div class="mode-info">
+          <h4>法定节假日</h4>
+          <p>仅在春节、国庆等法定放假期间触发（联网获取）</p>
+        </div>
+      </div>
+      <div class="mode-item">
+        <div class="mode-icon" style="background:#d1fae5;">🏢</div>
+        <div class="mode-info">
+          <h4>非法定节假日</h4>
+          <p>法定放假期间不触发，其余日子正常执行</p>
+        </div>
+      </div>
+      <div class="mode-item">
+        <div class="mode-icon" style="background:#fed7aa;">💼</div>
+        <div class="mode-info">
+          <h4>法定工作日</h4>
+          <p>仅在法定工作日触发，调休补班也算工作日（联网获取）</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技术亮点 -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span>技术亮点</div>
+    <div class="highlight-box">
+      <div class="highlight-item">
+        <div class="highlight-check">1</div>
+        <div>
+          <h4>MIUI 深度适配</h4>
+          <p>针对小米手机 4 项专属权限引导：自启动、省电策略、后台弹窗、锁屏清理</p>
+        </div>
+      </div>
+      <div class="highlight-item">
+        <div class="highlight-check">2</div>
+        <div>
+          <h4>三重熄屏保障</h4>
+          <p>全屏通知 + 屏幕唤醒 + 透明桥接 Activity，确保锁屏状态下可靠拉起</p>
+        </div>
+      </div>
+      <div class="highlight-item">
+        <div class="highlight-check">3</div>
+        <div>
+          <h4>节假日智能识别</h4>
+          <p>联网获取法定节假日数据，本地缓存 30 天，断网时自动 fail-open 不漏触发</p>
+        </div>
+      </div>
+      <div class="highlight-item">
+        <div class="highlight-check">4</div>
+        <div>
+          <h4>超小体积</h4>
+          <p>APK 仅 2.2MB，精简依赖，适合各种手机安装</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 使用场景 -->
+  <div class="section">
+    <div class="section-title"><span class="bar"></span>使用场景</div>
+    <div class="usecase-grid">
+      <div class="usecase-card">
+        <h4>⏰ 定时打卡</h4>
+        <p>工作日自动打开钉钉/企业微信，不再忘记打卡</p>
+      </div>
+      <div class="usecase-card">
+        <h4>📚 学习提醒</h4>
+        <p>每天定时打开背单词/学习 App，养成习惯</p>
+      </div>
+      <div class="usecase-card">
+        <h4>🏋️ 运动打卡</h4>
+        <p>固定时间打开运动 App，提醒自己锻炼</p>
+      </div>
+      <div class="usecase-card">
+        <h4>🎵 定时听歌</h4>
+        <p>随机时间段打开音乐 App，每天都有小惊喜</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="tech">Kotlin · Jetpack Compose · Room · AlarmManager</div>
+    <p>目标设备：小米9 / MIUI 12.5 / Android 11</p>
+    <p>最低支持：Android 11 (API 30) 及以上</p>
+  </div>
+
+</div>
+
+</body>
+</html>
