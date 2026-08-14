@@ -76,7 +76,7 @@ fun AppNavigation(viewModel: TaskViewModel = viewModel()) {
                     navController.navigate("app_picker")
                 },
                 onCreate = { pkg, name, hour, minute, repeatMode, weekDays,
-                             useRandomTime, rangeStartH, rangeStartM, rangeEndH, rangeEndM, returnDelay ->
+                             useRandomTime, rangeStartH, rangeStartM, rangeEndH, rangeEndM ->
                     viewModel.createTask(
                         targetPackage = pkg,
                         targetAppName = name,
@@ -88,8 +88,7 @@ fun AppNavigation(viewModel: TaskViewModel = viewModel()) {
                         rangeStartHour = rangeStartH,
                         rangeStartMinute = rangeStartM,
                         rangeEndHour = rangeEndH,
-                        rangeEndMinute = rangeEndM,
-                        returnDelaySeconds = returnDelay
+                        rangeEndMinute = rangeEndM
                     )
                     navController.popBackStack("task_list", inclusive = false)
                 },
@@ -105,9 +104,9 @@ fun AppNavigation(viewModel: TaskViewModel = viewModel()) {
                 onPickApp = {
                     navController.navigate("app_picker")
                 },
-                onCreate = { _, _, _, _, _, _, _, _, _, _, _, _ -> },
+                onCreate = { _, _, _, _, _, _, _, _, _, _, _ -> },
                 onUpdate = { taskId, pkg, name, hour, minute, repeatMode, weekDays,
-                             useRandomTime, rangeStartH, rangeStartM, rangeEndH, rangeEndM, returnDelay ->
+                             useRandomTime, rangeStartH, rangeStartM, rangeEndH, rangeEndM ->
                     viewModel.updateTask(
                         taskId = taskId,
                         targetPackage = pkg,
@@ -120,8 +119,7 @@ fun AppNavigation(viewModel: TaskViewModel = viewModel()) {
                         rangeStartHour = rangeStartH,
                         rangeStartMinute = rangeStartM,
                         rangeEndHour = rangeEndH,
-                        rangeEndMinute = rangeEndM,
-                        returnDelaySeconds = returnDelay
+                        rangeEndMinute = rangeEndM
                     )
                     editingTask.value = null
                     navController.popBackStack("task_list", inclusive = false)

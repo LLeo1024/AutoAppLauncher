@@ -72,8 +72,7 @@ fun CreateTaskScreen(
         rangeStartHour: Int,
         rangeStartMinute: Int,
         rangeEndHour: Int,
-        rangeEndMinute: Int,
-        returnDelaySeconds: Int
+        rangeEndMinute: Int
     ) -> Unit,
     onBack: () -> Unit,
     existingTask: TaskEntity? = null,
@@ -89,9 +88,8 @@ fun CreateTaskScreen(
         rangeStartHour: Int,
         rangeStartMinute: Int,
         rangeEndHour: Int,
-        rangeEndMinute: Int,
-        returnDelaySeconds: Int
-    ) -> Unit = { _, _, _, _, _, _, _, _, _, _, _, _, _ -> }
+        rangeEndMinute: Int
+    ) -> Unit = { _, _, _, _, _, _, _, _, _, _, _, _ -> }
 ) {
     val isEditMode = existingTask != null
 
@@ -108,10 +106,6 @@ fun CreateTaskScreen(
 
     var repeatMode by remember { mutableIntStateOf(existingTask?.repeatMode ?: 1) }
     var selectedDays by remember { mutableIntStateOf(existingTask?.weekDays ?: 0b1111111) }
-
-    // 延时返回配置
-    var returnDelaySeconds by remember { mutableIntStateOf(existingTask?.returnDelaySeconds ?: 120) }
-    var returnEnabled by remember { mutableStateOf((existingTask?.returnDelaySeconds ?: 120) > 0) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -489,74 +483,6 @@ fun CreateTaskScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // ===== 延时返回 =====
-            Text(
-                text = "拉起后延时返回",
-                style = MaterialTheme.typography.labelLarge,
-                color = TextSecondary,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-            ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "自动返回本应用",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "拉起目标App后，延时一段时间自动回到本应用主界面，防止后台被杀导致后续任务失效",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Switch(
-                            checked = returnEnabled,
-                            onCheckedChange = { returnEnabled = it }
-                        )
-                    }
-
-                    if (returnEnabled) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        val delayOptions = listOf(
-                            30 to "30秒",
-                            60 to "1分钟",
-                            120 to "2分钟",
-                            300 to "5分钟",
-                            600 to "10分钟"
-                        )
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            delayOptions.forEach { (seconds, label) ->
-                                FilterChip(
-                                    selected = returnDelaySeconds == seconds,
-                                    onClick = { returnDelaySeconds = seconds },
-                                    label = { Text(label) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // 验证时间段有效性
@@ -573,7 +499,6 @@ fun CreateTaskScreen(
             Button(
                 onClick = {
                     if (canSubmit && effectiveApp != null) {
-                        val finalDelay = if (returnEnabled) returnDelaySeconds else 0
                         if (isEditMode && existingTask != null) {
                             onUpdate(
                                 existingTask.id,
@@ -587,8 +512,7 @@ fun CreateTaskScreen(
                                 rangeStartHour,
                                 rangeStartMinute,
                                 rangeEndHour,
-                                rangeEndMinute,
-                                finalDelay
+                                rangeEndMinute
                             )
                         } else {
                             onCreate(
@@ -602,8 +526,7 @@ fun CreateTaskScreen(
                                 rangeStartHour,
                                 rangeStartMinute,
                                 rangeEndHour,
-                                rangeEndMinute,
-                                finalDelay
+                                rangeEndMinute
                             )
                         }
                     }

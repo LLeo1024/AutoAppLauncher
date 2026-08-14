@@ -36,7 +36,6 @@ import com.leo.autoapplaucher.R
 import com.leo.autoapplaucher.data.TaskEntity
 import com.leo.autoapplaucher.ui.theme.Success
 import com.leo.autoapplaucher.ui.theme.TextSecondary
-import com.leo.autoapplaucher.ui.theme.Warning
 
 /**
  * 任务卡片
@@ -45,7 +44,7 @@ import com.leo.autoapplaucher.ui.theme.Warning
  * ┌──────────────────────────────────┐
  * │ (图标)  08:56            [开关]   │
  * │         每日打卡App       [删除]   │
- * │         [每天] [随机] [2分钟后返回] │
+ * │         [每天] [随机]              │
  * └──────────────────────────────────┘
  *
  * 标签区使用 FlowRow 自动换行，避免标签过多时挤占右侧操作按钮。
@@ -189,15 +188,6 @@ fun TaskCard(
                             contentColor = MaterialTheme.colorScheme.primary
                         )
                     }
-                    // 延时返回标签
-                    if (task.returnDelaySeconds > 0) {
-                        TagChip(
-                            text = formatReturnDelay(task.returnDelaySeconds),
-                            iconRes = R.drawable.ic_access_time,
-                            containerColor = Warning.copy(alpha = 0.12f),
-                            contentColor = Warning
-                        )
-                    }
                 }
             }
         }
@@ -236,14 +226,4 @@ private fun TagChip(
             fontWeight = FontWeight.Medium
         )
     }
-}
-
-/**
- * 把延时秒数格式化为友好文案：
- * 120 -> "2分钟后返回"，45 -> "45秒后返回"，90 -> "1分30秒后返回"
- */
-private fun formatReturnDelay(seconds: Int): String = when {
-    seconds < 60 -> "${seconds}秒后返回"
-    seconds % 60 == 0 -> "${seconds / 60}分钟后返回"
-    else -> "${seconds / 60}分${seconds % 60}秒后返回"
 }

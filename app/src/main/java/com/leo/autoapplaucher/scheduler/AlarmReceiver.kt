@@ -39,7 +39,6 @@ class AlarmReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "AlarmReceiver"
-        private const val DEFAULT_RETURN_DELAY = 120
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -75,10 +74,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
                 if (shouldExecute) {
                     Log.i(TAG, "今天应执行，启动服务拉起 $targetAppName")
-                    startLauncherService(
-                        context, taskId, targetPackage, targetAppName,
-                        task.returnDelaySeconds
-                    )
+                    startLauncherService(context, taskId, targetPackage, targetAppName)
                 } else {
                     Log.i(TAG, "今天不应执行（节假日过滤），跳过拉起")
                 }
@@ -86,10 +82,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 Log.e(TAG, "处理闹钟失败: ${e.message}", e)
                 // 出错时仍然尝试启动服务（fail-open）
                 try {
-                    startLauncherService(
-                        context, taskId, targetPackage, targetAppName,
-                        task?.returnDelaySeconds ?: DEFAULT_RETURN_DELAY
-                    )
+                    startLauncherService(context, taskId, targetPackage, targetAppName)
                 } catch (e2: Exception) {
                     Log.e(TAG, "启动服务也失败: ${e2.message}")
                 }
@@ -192,14 +185,12 @@ class AlarmReceiver : BroadcastReceiver() {
         context: Context,
         taskId: Long,
         targetPackage: String,
-        targetAppName: String,
-        returnDelaySeconds: Int
+        targetAppName: String
     ) {
         val serviceIntent = Intent(context, AppLauncherService::class.java).apply {
             putExtra("task_id", taskId)
             putExtra("target_package", targetPackage)
             putExtra("target_app_name", targetAppName)
-            putExtra("return_delay_seconds", returnDelaySeconds)
         }
 
         try {

@@ -56,12 +56,7 @@ data class TaskEntity(
     val timeRangeEndHour: Int = 11,
 
     /** 随机时间段：结束时间 - 分钟 (0-59) */
-    val timeRangeEndMinute: Int = 0,
-
-    // ===== 拉起后延时返回功能 =====
-
-    /** 拉起目标App后，延时多少秒自动返回本App主界面（0=不返回） */
-    val returnDelaySeconds: Int = 120
+    val timeRangeEndMinute: Int = 0
 ) {
     /**
      * 根据重复模式判断今天是否应该执行

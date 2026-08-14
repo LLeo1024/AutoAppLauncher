@@ -84,8 +84,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         rangeStartHour: Int = 0,
         rangeStartMinute: Int = 0,
         rangeEndHour: Int = 0,
-        rangeEndMinute: Int = 0,
-        returnDelaySeconds: Int = 120
+        rangeEndMinute: Int = 0
     ) {
         viewModelScope.launch {
             val task = TaskEntity(
@@ -99,8 +98,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 timeRangeStartHour = rangeStartHour,
                 timeRangeStartMinute = rangeStartMinute,
                 timeRangeEndHour = rangeEndHour,
-                timeRangeEndMinute = rangeEndMinute,
-                returnDelaySeconds = returnDelaySeconds
+                timeRangeEndMinute = rangeEndMinute
             )
             val id = database.taskDao().insert(task)
             val savedTask = task.copy(id = id)
@@ -124,8 +122,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
         rangeStartHour: Int = 0,
         rangeStartMinute: Int = 0,
         rangeEndHour: Int = 0,
-        rangeEndMinute: Int = 0,
-        returnDelaySeconds: Int = 120
+        rangeEndMinute: Int = 0
     ) {
         viewModelScope.launch {
             val oldTask = database.taskDao().getTaskById(taskId)
@@ -146,8 +143,7 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 timeRangeStartHour = rangeStartHour,
                 timeRangeStartMinute = rangeStartMinute,
                 timeRangeEndHour = rangeEndHour,
-                timeRangeEndMinute = rangeEndMinute,
-                returnDelaySeconds = returnDelaySeconds
+                timeRangeEndMinute = rangeEndMinute
             )
             database.taskDao().update(updatedTask)
             if (updatedTask.enabled) {

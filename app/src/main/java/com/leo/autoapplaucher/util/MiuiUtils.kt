@@ -86,8 +86,7 @@ object MiuiUtils {
      * 跳转到 MIUI 省电策略页面
      * 设置 → 省电与电池 → 应用智能省电 → [本App] → 无限制
      */
-    fun openBatterySaverSettings(context: Context): Boolean {
-        val intents = listOf(
+    fun openBatterySaverSettings(context: Context): Boolean {        val intents = listOf(
             Intent().apply {
                 component = ComponentName(
                     "com.miui.powerkeeper",
@@ -128,6 +127,30 @@ object MiuiUtils {
         )
 
         return tryStartActivity(context, intents, "后台弹出界面")
+    }
+
+    /**
+     * 跳转到悬浮窗权限设置页（SYSTEM_ALERT_WINDOW）
+     * 设置 → 应用设置 → 应用管理 → [本App] → 其他权限 → 显示悬浮窗
+     *
+     * Android 10+ 拥有悬浮窗权限的应用允许后台启动 Activity，
+     * 且 MIUI「后台弹出界面」放行链路依赖此权限，是熄屏拉起的关键。
+     */
+    fun openOverlaySettings(context: Context): Boolean {
+        val intents = listOf(
+            Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                data = Uri.parse("package:${context.packageName}")
+            },
+            // MIUI 权限编辑页 fallback
+            Intent().apply {
+                component = ComponentName(
+                    "com.miui.securitycenter",
+                    "com.miui.permcenter.permissions.AppPermissionsEditorActivity"
+                )
+                putExtra("package_name", context.packageName)
+            }
+        )
+        return tryStartActivity(context, intents, "悬浮窗权限")
     }
 
     /**
@@ -192,6 +215,25 @@ object MiuiUtils {
     // ==================== 权限状态汇总 ====================
 
     /**
+     * 检测是否允许显示悬浮窗（SYSTEM_ALERT_WINDOW）
+     *
+     * 关键说明：这是 MIUI「后台弹出界面」能否生效的核心可检测指标。
+     * - Android 10+ 系统规则：拥有悬浮窗权限的应用，允许在后台启动 Activity
+     *   （AOSP 后台启动限制的官方豁免条件之一）
+     * - MIUI 的「后台弹出界面」开关（appops 10020/10021）无法从 App 内直接查询，
+     *   但真机验证表明：悬浮窗权限开启后，MIUI 后台弹出界面放行链路才能打通
+     * - 亮屏场景下从后台 Service 启动 Activity 被 MIUI 拦截（MIUILOG- Permission Denied）
+     *   的核心原因就是该权限未开启
+     */
+    fun canDrawOverlays(context: Context): Boolean {
+        return try {
+            Settings.canDrawOverlays(context)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
      * 获取当前所有权限的状态
      * 用于在 UI 上展示哪些权限还没开
      */
@@ -199,6 +241,7 @@ object MiuiUtils {
         val batteryOptimization: Boolean,
         val exactAlarm: Boolean,
         val notification: Boolean,
+        val overlayPermission: Boolean,
         val isMiui: Boolean,
         val miuiVersion: String
     )
@@ -208,6 +251,7 @@ object MiuiUtils {
             batteryOptimization = isBatteryOptimizationIgnored(context),
             exactAlarm = true, // Android 11 上始终为 true
             notification = hasNotificationPermission(context),
+            overlayPermission = canDrawOverlays(context),
             isMiui = isMiui(),
             miuiVersion = getMiuiVersion()
         )

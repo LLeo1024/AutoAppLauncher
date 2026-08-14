@@ -132,11 +132,15 @@ fun PermissionSettingsScreen(
                 PermissionCard(
                     iconRes = R.drawable.ic_notifications,
                     title = "后台弹出界面",
-                    description = "允许App从后台拉起目标应用，这是核心功能必需权限",
-                    isGranted = true, // 无法通过API检测
+                    description = "允许App在后台直接弹出界面。未开启时熄屏拉起目标App可能被MIUI静默拦截（拉起成功的关键权限）",
+                    isGranted = status.overlayPermission,
                     showManualHint = true,
                     onClick = {
-                        MiuiUtils.openBackgroundPopupSettings(context)
+                        if (!status.overlayPermission) {
+                            MiuiUtils.openOverlaySettings(context)
+                        } else {
+                            MiuiUtils.openBackgroundPopupSettings(context)
+                        }
                     }
                 )
 
