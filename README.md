@@ -28,7 +28,7 @@
 
 **[⬇️ 下载 AutoAppLauncher v1.8 APK (2.2MB)](https://github.com/LLeo1024/AutoAppLauncher/raw/main/releases/AutoAppLauncher-v1.8.apk)**
 
-也可以前往 [`releases` 目录](https://github.com/LLeo1024/AutoAppLauncher/tree/main/releases) 手动下载，历史版本（v1.6 / v1.7）均在其中。
+也可以前往 [`releases` 目录](https://github.com/LLeo1024/AutoAppLauncher/tree/main/releases) 手动下载，历史版本（v1.6 / v1.7 ⚠️不可用）均在其中。
 
 > 安装时可能需要开启「允许安装未知来源应用」。安装完成后，请继续完成下方的系统权限配置。
 
@@ -289,7 +289,8 @@ APK 输出路径: `app/build/outputs/apk/release/app-release.apk`
 - 权限设置页新增「后台弹出界面 / 悬浮窗」**真实状态检测**，不再显示虚假的绿色对勾
 - 熄屏拉起稳定性优化：点亮屏幕后轮询等待屏幕真正亮起（最多 5 秒）再拉起目标应用，减少 MIUI 后台启动拦截
 
-### v1.7 (2026-08-14)
+### v1.7 (2026-08-14) ⚠️ 不可用
+> 该版本存在问题，请勿下载安装。延时返回功能在亮屏/熄屏场景均存在异常（熄屏场景无法返回），且主页存在显示异常，已由 v1.8 修复并移除该功能。
 - 修复随机时间段每天触发时间相同的问题：触发后强制在明天同一时间段重新随机
 - 修复每周模式星期过滤失效：只在选定的星期触发，闹钟只注册到下一个匹配星期
 - 主页任务卡片布局优化：标签自动换行、按类型配色、带图标，不再挤压右侧按钮
