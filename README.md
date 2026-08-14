@@ -26,9 +26,9 @@
 
 无需自己编译，直接下载 APK 安装即可使用。
 
-**[⬇️ 下载 AutoAppLauncher v1.6 APK (2.2MB)](https://github.com/Leo951024/AutoAppLauncher/raw/main/releases/AutoAppLauncher-v1.6.apk)**
+**[⬇️ 下载 AutoAppLauncher v1.8 APK (2.2MB)](https://github.com/LLeo1024/AutoAppLauncher/raw/main/releases/AutoAppLauncher-v1.8.apk)**
 
-也可以前往 [`releases` 目录](https://github.com/Leo951024/AutoAppLauncher/tree/main/releases) 手动下载。
+也可以前往 [`releases` 目录](https://github.com/LLeo1024/AutoAppLauncher/tree/main/releases) 手动下载，历史版本（v1.6 / v1.7）均在其中。
 
 > 安装时可能需要开启「允许安装未知来源应用」。安装完成后，请继续完成下方的系统权限配置。
 
@@ -280,6 +280,23 @@ app/src/main/java/com/leo/autoapplaucher/
 ```
 
 APK 输出路径: `app/build/outputs/apk/release/app-release.apk`
+
+## 更新日志
+
+### v1.8 (2026-08-14)
+- 移除「拉起后延时返回」功能，界面更简洁
+- 数据库升级至 v5（自动迁移，原有任务数据完整保留）
+- 权限设置页新增「后台弹出界面 / 悬浮窗」**真实状态检测**，不再显示虚假的绿色对勾
+- 熄屏拉起稳定性优化：点亮屏幕后轮询等待屏幕真正亮起（最多 5 秒）再拉起目标应用，减少 MIUI 后台启动拦截
+
+### v1.7 (2026-08-14)
+- 修复随机时间段每天触发时间相同的问题：触发后强制在明天同一时间段重新随机
+- 修复每周模式星期过滤失效：只在选定的星期触发，闹钟只注册到下一个匹配星期
+- 主页任务卡片布局优化：标签自动换行、按类型配色、带图标，不再挤压右侧按钮
+- 修复延时返回被 MIUI 拦截问题（「后台弹出界面」权限引导 + 完整点亮链路）
+
+### v1.6
+- 初始版本：定时拉起、随机时间段、节假日识别、开机自启、后台保活
 
 ## License
 
