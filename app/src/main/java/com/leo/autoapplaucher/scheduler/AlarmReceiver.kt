@@ -70,8 +70,8 @@ class AlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 检查是否应该今天执行（节假日模式）
-                val shouldExecute = checkShouldExecuteToday(context, task.repeatMode)
+                // 检查是否应该今天执行（每周模式星期过滤 + 节假日过滤）
+                val shouldExecute = checkShouldExecuteToday(context, task)
 
                 if (shouldExecute) {
                     Log.i(TAG, "今天应执行，启动服务拉起 $targetAppName")
@@ -112,14 +112,26 @@ class AlarmReceiver : BroadcastReceiver() {
 
     /**
      * 检查今天是否应该执行任务
-     * 对于法定节假日(3)/非法定节假日(4)/法定工作日(5)模式，需要联网查询节假日数据
+     * - 每周模式(2)：检查今天星期是否在选中范围内（shouldRunToday）
+     * - 法定节假日(3)/非法定节假日(4)/法定工作日(5)：需要联网查询节假日数据
      */
     private suspend fun checkShouldExecuteToday(
         context: Context,
-        repeatMode: Int
+        task: TaskEntity
     ): Boolean {
+        val repeatMode = task.repeatMode
+
+        if (repeatMode == 2) {
+            // 每周模式：检查今天星期是否匹配（bit0=周日...bit6=周六）
+            val dayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+            val matched = task.shouldRunToday(dayOfWeek)
+            Log.i(TAG, "每周模式: 今天星期=$dayOfWeek (${weekdayName(dayOfWeek)}), " +
+                    "weekDays=0b${task.weekDays.toString(2).padStart(7, '0')}, 匹配=$matched")
+            return matched
+        }
+
         if (repeatMode != 3 && repeatMode != 4 && repeatMode != 5) {
-            return true // 非节假日模式，总是执行
+            return true // 非节假日/每周模式，总是执行
         }
 
         val calendar = Calendar.getInstance()
@@ -154,6 +166,22 @@ class AlarmReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             Log.e(TAG, "节假日检查异常: ${e.message}")
             true // fail-open
+        }
+    }
+
+    /**
+     * 星期数字转中文名（Calendar.DAY_OF_WEEK: 1=周日 ... 7=周六）
+     */
+    private fun weekdayName(dayOfWeek: Int): String {
+        return when (dayOfWeek) {
+            Calendar.SUNDAY -> "周日"
+            Calendar.MONDAY -> "周一"
+            Calendar.TUESDAY -> "周二"
+            Calendar.WEDNESDAY -> "周三"
+            Calendar.THURSDAY -> "周四"
+            Calendar.FRIDAY -> "周五"
+            Calendar.SATURDAY -> "周六"
+            else -> "未知"
         }
     }
 

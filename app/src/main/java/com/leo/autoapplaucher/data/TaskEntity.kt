@@ -66,12 +66,15 @@ data class TaskEntity(
     /**
      * 根据重复模式判断今天是否应该执行
      * 注意：法定节假日(3)、非法定节假日(4)和法定工作日(5)的判断在 AlarmReceiver 中异步完成
+     *
+     * @param dayOfWeek Calendar.DAY_OF_WEEK 值（1=周日, 2=周一, ..., 7=周六），
+     *                  与 weekDays 位掩码 bit0=周日..bit6=周六 对应，需要减 1 对齐
      */
     fun shouldRunToday(dayOfWeek: Int): Boolean {
         return when (repeatMode) {
             0 -> true // 一次性任务（调度时已判断日期）
             1 -> true // 每天
-            2 -> (weekDays shr dayOfWeek) and 1 == 1 // 按星期
+            2 -> (weekDays shr (dayOfWeek - 1)) and 1 == 1 // 按星期
             3 -> true // 法定节假日（AlarmReceiver 中检查）
             4 -> true // 非法定节假日（AlarmReceiver 中检查）
             5 -> true // 法定工作日（AlarmReceiver 中检查）

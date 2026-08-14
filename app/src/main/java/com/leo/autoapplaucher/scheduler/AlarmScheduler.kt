@@ -70,14 +70,15 @@ class AlarmScheduler(private val context: Context) {
     /**
      * 注册下一次闹钟（触发后重新调度）
      *
-     * 固定时间：明天同一时间
-     * 随机时间段：明天同一时间段内重新随机（分钟级）
+     * 固定时间：下一天同一时间
+     * 随机时间段：下一天同一时间段内重新随机（分钟级）
+     * 每周模式(2)：跳到下一个匹配的星期（可能不止一天后）
      *
-     * 强制设为明天，避免"今天随机到更晚时间导致当天重复触发"的 bug，
+     * 强制设为"下一个应执行日"，避免"今天随机到更晚时间导致当天重复触发"的 bug，
      * 保证每天在设定区间内触发一次，且每天时间都不同
      */
     fun scheduleNextDay(task: TaskEntity) {
-        registerAlarm(task, computeTomorrowTrigger(task))
+        registerAlarm(task, computeNextTrigger(task))
     }
 
     /**
@@ -103,17 +104,23 @@ class AlarmScheduler(private val context: Context) {
 
     /**
      * 计算首次触发的绝对时间（毫秒）
+     *
+     * 每周模式(2)：只有匹配的星期才会注册闹钟，非匹配星期直接跳过
+     * 固定时间：今天匹配且未过则今天触发，已过则下一个匹配日
+     * 随机时间段：今天匹配且区间未过完 → 在剩余窗口内随机（保证今天触发）；
+     *            今天不匹配或已过完 → 下一个匹配日在完整区间内随机
      */
     private fun computeFirstTrigger(task: TaskEntity): Long {
         val now = Calendar.getInstance()
         val nowTotal = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+        val todayMatches = todayMatchesWeekday(task, now)
 
         if (task.useRandomTime) {
             val startTotal = task.timeRangeStartHour * 60 + task.timeRangeStartMinute
             val endTotal = task.timeRangeEndHour * 60 + task.timeRangeEndMinute
 
-            if (endTotal > nowTotal) {
-                // 今天的时间段还没过完：在剩余窗口内随机（保证今天触发一次）
+            if (todayMatches && endTotal > nowTotal) {
+                // 今天是匹配星期且时间段还没过完：在剩余窗口内随机（保证今天触发一次）
                 val from = maxOf(startTotal, nowTotal + 1)
                 if (from <= endTotal) {
                     val (h, m) = pickRandomTimeBetween(from, endTotal)
@@ -125,27 +132,31 @@ class AlarmScheduler(private val context: Context) {
                     }.timeInMillis
                 }
             }
-            // 今天区间已过完或窗口无效：明天随机
-            return computeTomorrowTrigger(task)
+            // 今天不匹配或区间已过完：下一个匹配日随机
+            return computeNextTrigger(task)
         }
 
-        // 固定时间：今天未过则今天，已过则明天
+        // 固定时间：今天匹配且未过则今天，否则从下一个匹配日开始找
         val cal = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, task.hour)
             set(Calendar.MINUTE, task.minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
-        if (cal.timeInMillis <= System.currentTimeMillis()) {
+        if (!todayMatches || cal.timeInMillis <= System.currentTimeMillis()) {
             cal.add(Calendar.DAY_OF_YEAR, 1)
+            skipToNextMatchingWeekday(cal, task)
         }
         return cal.timeInMillis
     }
 
     /**
-     * 计算明天的触发时间（随机时间段重新随机）
+     * 计算下一次应触发的日期（随机时间段重新随机）
+     *
+     * 默认从明天开始；每周模式(2)会跳过所有不匹配的星期，
+     * 直到落在下一个匹配的星期上
      */
-    private fun computeTomorrowTrigger(task: TaskEntity): Long {
+    private fun computeNextTrigger(task: TaskEntity): Long {
         val (h, m) = if (task.useRandomTime) {
             pickRandomTimeInRange(task)
         } else {
@@ -153,11 +164,37 @@ class AlarmScheduler(private val context: Context) {
         }
         return Calendar.getInstance().apply {
             add(Calendar.DAY_OF_YEAR, 1)
+            skipToNextMatchingWeekday(this, task)
             set(Calendar.HOUR_OF_DAY, h)
             set(Calendar.MINUTE, m)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
+    }
+
+    /**
+     * 判断给定日期是否匹配任务的星期选择（仅每周模式(2)生效，其余恒为 true）
+     *
+     * Calendar.DAY_OF_WEEK: 1=周日 ... 7=周六
+     * weekDays 位掩码: bit0=周日 ... bit6=周六，需减 1 对齐
+     */
+    private fun todayMatchesWeekday(task: TaskEntity, cal: Calendar): Boolean {
+        if (task.repeatMode != 2) return true
+        val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+        return ((task.weekDays shr (dayOfWeek - 1)) and 1) == 1
+    }
+
+    /**
+     * 从当前日期开始向后跳，直到落在匹配的星期上（仅每周模式(2)生效）
+     * weekDays==0（异常数据）时最多跳 8 天兜底，由 Receiver 层过滤
+     */
+    private fun skipToNextMatchingWeekday(cal: Calendar, task: TaskEntity) {
+        if (task.repeatMode != 2) return
+        var guard = 0
+        while (guard < 8 && !todayMatchesWeekday(task, cal)) {
+            cal.add(Calendar.DAY_OF_YEAR, 1)
+            guard++
+        }
     }
 
     /**
