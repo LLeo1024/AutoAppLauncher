@@ -33,7 +33,9 @@ import kotlinx.coroutines.launch
  * 4. 延迟 500ms 等待屏幕完全点亮
  * 5. 启动 LaunchBridgeActivity（透明 Activity，具有 showWhenLocked + turnScreenOn）
  * 6. BridgeActivity 拉起目标 App 并 finish 自身
- * 7. 记录执行日志，停止服务
+ * 7. 记录执行日志
+ * 8. 若配置了延时返回（returnDelaySeconds > 0）：延时后自动回到本App主界面，
+ *    防止本App被后台杀掉导致后续任务失效；否则立即停止服务
  *
  * 为什么不直接从 Service startActivity？
  * - MIUI 在熄屏时即使前台 Service 也可能拦截后台 startActivity
@@ -47,6 +49,7 @@ class AppLauncherService : Service() {
         private const val CHANNEL_ID = "app_launcher_channel"
         private const val CHANNEL_ID_HIGH = "app_launcher_high_priority"
         private const val NOTIFICATION_ID = 10001
+        private const val DEFAULT_RETURN_DELAY = 120
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -55,6 +58,8 @@ class AppLauncherService : Service() {
         val targetPackage = intent?.getStringExtra("target_package")
         val targetAppName = intent?.getStringExtra("target_app_name") ?: "未知应用"
         val taskId = intent?.getLongExtra("task_id", -1) ?: -1L
+        val returnDelaySeconds = intent?.getIntExtra("return_delay_seconds", DEFAULT_RETURN_DELAY)
+            ?: DEFAULT_RETURN_DELAY
 
         if (targetPackage == null) {
             Log.e(TAG, "目标包名为空，停止服务")
@@ -62,7 +67,8 @@ class AppLauncherService : Service() {
             return START_NOT_STICKY
         }
 
-        Log.i(TAG, "开始拉起目标App: $targetAppName ($targetPackage)")
+        Log.i(TAG, "开始拉起目标App: $targetAppName ($targetPackage), " +
+                "延时返回: ${returnDelaySeconds}s")
 
         // 1. 创建通知渠道并启动前台服务
         createNotificationChannels()
@@ -85,20 +91,23 @@ class AppLauncherService : Service() {
 
         // 3. 延迟 500ms 等待屏幕完全点亮，然后启动桥接 Activity
         Handler(Looper.getMainLooper()).postDelayed({
-            launchViaBridgeActivity(targetPackage, targetAppName, taskId, screenWakeLock)
+            launchViaBridgeActivity(
+                targetPackage, targetAppName, taskId, screenWakeLock, returnDelaySeconds
+            )
         }, 500)
 
         return START_NOT_STICKY
     }
 
     /**
-     * 通过桥接 Activity 拉起目标 App
+     * 通过桥接 Activity 拉起目标 App，并处理延时返回
      */
     private fun launchViaBridgeActivity(
         targetPackage: String,
         targetAppName: String,
         taskId: Long,
-        screenWakeLock: PowerManager.WakeLock
+        screenWakeLock: PowerManager.WakeLock,
+        returnDelaySeconds: Int
     ) {
         var result = "success"
         var errorMsg: String? = null
@@ -121,7 +130,7 @@ class AppLauncherService : Service() {
             Log.e(TAG, "启动桥接 Activity 失败: ${e.message}", e)
         }
 
-        // 记录执行日志
+        // 记录执行日志（后台线程）
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (taskId != -1L) {
@@ -142,11 +151,69 @@ class AppLauncherService : Service() {
                 if (screenWakeLock.isHeld) {
                     screenWakeLock.release()
                 }
-                // 延迟 1 秒停止服务，确保 BridgeActivity 有时间完成
-                Handler(Looper.getMainLooper()).postDelayed({
-                    stopSelf()
-                }, 1000)
             }
+        }
+
+        // 延时返回逻辑（主线程）
+        if (returnDelaySeconds > 0) {
+            updateWaitingNotification(targetAppName, returnDelaySeconds)
+            Log.i(TAG, "$returnDelaySeconds 秒后返回 AutoAppLauncher 主界面")
+            Handler(Looper.getMainLooper()).postDelayed({
+                returnToMainActivity()
+                stopSelf()
+            }, returnDelaySeconds * 1000L)
+        } else {
+            // 未配置延时返回：1 秒后停止服务，确保 BridgeActivity 有时间完成
+            Handler(Looper.getMainLooper()).postDelayed({
+                stopSelf()
+            }, 1000)
+        }
+    }
+
+    /**
+     * 更新前台通知为"等待返回"状态
+     */
+    private fun updateWaitingNotification(appName: String, delaySeconds: Int) {
+        try {
+            val contentIntent = Intent(this, MainActivity::class.java)
+            val contentPendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                contentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID_HIGH)
+                .setContentTitle("已打开 $appName")
+                .setContentText("$delaySeconds 秒后返回 AutoAppLauncher")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setContentIntent(contentPendingIntent)
+                .setOngoing(true)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .build()
+            getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Log.w(TAG, "更新等待通知失败: ${e.message}")
+        }
+    }
+
+    /**
+     * 跳回本 App 主界面
+     */
+    private fun returnToMainActivity() {
+        try {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
+            }
+            startActivity(intent)
+            Log.i(TAG, "延时结束，返回 AutoAppLauncher 主界面")
+        } catch (e: Exception) {
+            Log.e(TAG, "返回主界面失败: ${e.message}")
         }
     }
 

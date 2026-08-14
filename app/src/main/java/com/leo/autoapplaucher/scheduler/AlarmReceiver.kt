@@ -8,6 +8,7 @@ import android.os.PowerManager
 import android.util.Log
 import com.leo.autoapplaucher.data.AppDatabase
 import com.leo.autoapplaucher.data.HolidayRepository
+import com.leo.autoapplaucher.data.TaskEntity
 import com.leo.autoapplaucher.service.AppLauncherService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,11 +29,17 @@ import java.util.Calendar
  * 1. 查询 Room 缓存
  * 2. 缓存不存在则从 API 获取
  * 3. API 失败则放行执行（fail-open，避免漏触发）
+ *
+ * 重新调度：
+ * - 无论本次执行成功与否，都会在 finally 中重新注册下一次闹钟（非一次性任务），
+ *   避免异常导致第二天没有闹钟
+ * - 重新调度使用 scheduleNextDay()，固定设为明天，保证随机时间段每天时间不同
  */
 class AlarmReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "AlarmReceiver"
+        private const val DEFAULT_RETURN_DELAY = 120
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -53,9 +60,10 @@ class AlarmReceiver : BroadcastReceiver() {
         wakeLock.acquire(30_000)
 
         CoroutineScope(Dispatchers.IO).launch {
+            var task: TaskEntity? = null
             try {
                 val db = AppDatabase.getDatabase(context)
-                val task = db.taskDao().getTaskById(taskId)
+                task = db.taskDao().getTaskById(taskId)
 
                 if (task == null || !task.enabled) {
                     Log.w(TAG, "任务不存在或已禁用，跳过")
@@ -67,26 +75,34 @@ class AlarmReceiver : BroadcastReceiver() {
 
                 if (shouldExecute) {
                     Log.i(TAG, "今天应执行，启动服务拉起 $targetAppName")
-                    startLauncherService(context, taskId, targetPackage, targetAppName)
+                    startLauncherService(
+                        context, taskId, targetPackage, targetAppName,
+                        task.returnDelaySeconds
+                    )
                 } else {
                     Log.i(TAG, "今天不应执行（节假日过滤），跳过拉起")
                 }
-
-                // 重新注册下一次闹钟（非一次性任务）
-                if (task.repeatMode != 0) {
-                    val scheduler = AlarmScheduler(context)
-                    scheduler.schedule(task)
-                }
-
             } catch (e: Exception) {
                 Log.e(TAG, "处理闹钟失败: ${e.message}", e)
                 // 出错时仍然尝试启动服务（fail-open）
                 try {
-                    startLauncherService(context, taskId, targetPackage, targetAppName)
+                    startLauncherService(
+                        context, taskId, targetPackage, targetAppName,
+                        task?.returnDelaySeconds ?: DEFAULT_RETURN_DELAY
+                    )
                 } catch (e2: Exception) {
                     Log.e(TAG, "启动服务也失败: ${e2.message}")
                 }
             } finally {
+                // 无论成功与否，都重新注册下一次闹钟（非一次性任务）
+                val currentTask = task
+                if (currentTask != null && currentTask.enabled && currentTask.repeatMode != 0) {
+                    try {
+                        AlarmScheduler(context).scheduleNextDay(currentTask)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "重新调度下一次闹钟失败: ${e.message}")
+                    }
+                }
                 if (wakeLock.isHeld) {
                     wakeLock.release()
                 }
@@ -148,12 +164,14 @@ class AlarmReceiver : BroadcastReceiver() {
         context: Context,
         taskId: Long,
         targetPackage: String,
-        targetAppName: String
+        targetAppName: String,
+        returnDelaySeconds: Int
     ) {
         val serviceIntent = Intent(context, AppLauncherService::class.java).apply {
             putExtra("task_id", taskId)
             putExtra("target_package", targetPackage)
             putExtra("target_app_name", targetAppName)
+            putExtra("return_delay_seconds", returnDelaySeconds)
         }
 
         try {
