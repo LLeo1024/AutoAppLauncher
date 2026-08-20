@@ -257,6 +257,15 @@ object MiuiUtils {
         )
     }
 
+    /**
+     * 检查是否有可检测的关键权限未开启（用于主页红点提醒）
+     * 仅检测能通过 API 确认的权限，MIUI 专属权限（自启动/锁屏不清理）无法检测故不纳入
+     */
+    fun hasCriticalPermissionIssue(context: Context): Boolean {
+        val status = getPermissionStatus(context)
+        return !status.batteryOptimization || !status.overlayPermission || !status.notification
+    }
+
     // ==================== 内部工具 ====================
 
     /**

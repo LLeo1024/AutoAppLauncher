@@ -1,5 +1,6 @@
 package com.leo.autoapplaucher.ui.screen
 
+import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -26,19 +29,26 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.leo.autoapplaucher.ui.component.TaskCard
+import com.leo.autoapplaucher.ui.theme.Error
 import com.leo.autoapplaucher.ui.theme.TextSecondary
 import com.leo.autoapplaucher.ui.viewmodel.TaskViewModel
+import com.leo.autoapplaucher.util.MiuiUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +59,23 @@ fun TaskListScreen(
     viewModel: TaskViewModel = viewModel()
 ) {
     val tasks by viewModel.tasks.collectAsState(initial = emptyList())
+    val context = LocalContext.current
+
+    // 获取版本号
+    val versionName = remember {
+        try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            pInfo.versionName ?: ""
+        } catch (e: PackageManager.NameNotFoundException) {
+            ""
+        }
+    }
+
+    // 检查权限是否有问题（用于设置图标红点）
+    var hasPermissionIssue by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        hasPermissionIssue = MiuiUtils.hasCriticalPermissionIssue(context)
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -62,7 +89,15 @@ fun TaskListScreen(
                 },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "权限设置")
+                        BadgedBox(
+                            badge = {
+                                if (hasPermissionIssue) {
+                                    Badge(containerColor = Error)
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Settings, contentDescription = "权限设置")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -83,6 +118,7 @@ fun TaskListScreen(
     ) { paddingValues ->
         if (tasks.isEmpty()) {
             EmptyState(
+                versionName = versionName,
                 modifier = Modifier.padding(paddingValues)
             )
         } else {
@@ -104,13 +140,24 @@ fun TaskListScreen(
                         onClick = { onEditTask(task.id) }
                     )
                 }
+                item {
+                    Text(
+                        text = "v$versionName",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 8.dp)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EmptyState(modifier: Modifier = Modifier) {
+private fun EmptyState(versionName: String = "", modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -145,5 +192,13 @@ private fun EmptyState(modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
         )
+        if (versionName.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "v$versionName",
+                style = MaterialTheme.typography.labelSmall,
+                color = TextSecondary.copy(alpha = 0.5f)
+            )
+        }
     }
 }

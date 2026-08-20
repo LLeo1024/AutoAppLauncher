@@ -127,7 +127,7 @@ class AlarmScheduler(private val context: Context) {
                     return Calendar.getInstance().apply {
                         set(Calendar.HOUR_OF_DAY, h)
                         set(Calendar.MINUTE, m)
-                        set(Calendar.SECOND, 0)
+                        set(Calendar.SECOND, randomSecondHolder.get() ?: 0)
                         set(Calendar.MILLISECOND, 0)
                     }.timeInMillis
                 }
@@ -167,7 +167,7 @@ class AlarmScheduler(private val context: Context) {
             skipToNextMatchingWeekday(this, task)
             set(Calendar.HOUR_OF_DAY, h)
             set(Calendar.MINUTE, m)
-            set(Calendar.SECOND, 0)
+            set(Calendar.SECOND, if (task.useRandomTime) (randomSecondHolder.get() ?: 0) else 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
     }
@@ -216,10 +216,19 @@ class AlarmScheduler(private val context: Context) {
         val resultTotal = fromTotal + randomOffset
         val hour = resultTotal / 60
         val minute = resultTotal % 60
+        // 秒级随机偏移（0-59），让每天触发时间差异更明显
+        val randomSecond = Random().nextInt(60)
         Log.i(TAG, "随机时间选择: ${formatMinute(fromTotal)} ~ ${formatMinute(toTotal)}" +
-                " → 选中 ${String.format("%02d:%02d", hour, minute)}")
+                " → 选中 ${String.format("%02d:%02d", hour, minute)}:${String.format("%02d", randomSecond)}")
+        // 将秒偏移存入 ThreadLocal 供 registerAlarm 使用
+        randomSecondHolder.set(randomSecond)
         return Pair(hour, minute)
     }
+
+    /**
+     * 保存随机秒偏移，供 registerAlarm 设置触发时间的秒部分
+     */
+    private val randomSecondHolder = ThreadLocal<Int>()
 
     /**
      * 向 AlarmManager 注册精确闹钟
