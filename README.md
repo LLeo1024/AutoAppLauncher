@@ -26,9 +26,9 @@
 
 无需自己编译，直接下载 APK 安装即可使用。
 
-**[⬇️ 下载 AutoAppLauncher v1.8 APK (2.2MB)](https://github.com/LLeo1024/AutoAppLauncher/raw/main/releases/AutoAppLauncher-v1.8.apk)**
+**[⬇️ 下载 AutoAppLauncher v1.9.1 APK (2.2MB)](https://github.com/LLeo1024/AutoAppLauncher/raw/main/releases/AutoAppLauncher-v1.9.1.apk)**
 
-也可以前往 [`releases` 目录](https://github.com/LLeo1024/AutoAppLauncher/tree/main/releases) 手动下载，历史版本（v1.6 / v1.7 ⚠️不可用）均在其中。
+也可以前往 [`releases` 目录](https://github.com/LLeo1024/AutoAppLauncher/tree/main/releases) 手动下载，历史版本（v1.6 / v1.8 可用，v1.7 ⚠️不可用）均在其中。
 
 > 安装时可能需要开启「允许安装未知来源应用」。安装完成后，请继续完成下方的系统权限配置。
 
@@ -282,6 +282,15 @@ app/src/main/java/com/leo/autoapplaucher/
 APK 输出路径: `app/build/outputs/apk/release/app-release.apk`
 
 ## 更新日志
+
+### v1.9.1 (2026-08-20)
+- 随机时间恢复为分钟级随机（移除 v1.9 的秒级随机，触发时间为整分钟点）
+
+### v1.9 (2026-08-20)
+- 主页底部显示当前版本号
+- 权限设置页增强：三态状态显示（已开启 / 未开启 / 待确认），无法自动检测的项显示「待确认」引导手动检查
+- 权限未全部开启时，每个未开启权限项下方显示具体的系统设置路径引导
+- 主页右上角设置图标显示红点提醒（存在关键权限问题时）
 
 ### v1.8 (2026-08-14)
 - 移除「拉起后延时返回」功能，界面更简洁
